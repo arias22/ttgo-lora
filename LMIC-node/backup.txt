@@ -154,9 +154,9 @@ void printEvent(ostime_t timestamp,
 #ifdef USE_DISPLAY
     if (target == PrintTarget::All || target == PrintTarget::Display)
     {
-        display.clearLine(TIME_ROW);
-        display.setCursor(COL_0, TIME_ROW);
-        display.print(F("Time:"));
+        display.clearLine(DATA_ROW);
+        display.setCursor(COL_0, DATA_ROW);
+        display.print(F("Data:"));
         display.print(timestamp);
         display.clearLine(EVENT_ROW);
         if (clearDisplayStatusRow)
@@ -178,14 +178,14 @@ void printEvent(ostime_t timestamp,
 
     if (target == PrintTarget::All || target == PrintTarget::Serial)
     {
-        // printChars(serial, '0', zerosCount);
-        // serial.print(timeString);
-        // serial.print(":  ");
-        // if (eventLabel)
-        // {
-        //     serial.print(F("Event: "));
-        // }
-        // serial.println(message);
+        printChars(serial, '0', zerosCount);
+        serial.print(timeString);
+        serial.print(":  ");
+        if (eventLabel)
+        {
+            serial.print(F("Event: "));
+        }
+        serial.println(message);
     }
 #endif
 }
@@ -217,11 +217,11 @@ void printFrameCounters(PrintTarget target = PrintTarget::All)
 #ifdef USE_SERIAL
     if (target == PrintTarget::Serial || target == PrintTarget::All)
     {
-        // printSpaces(serial, MESSAGE_INDENT);
-        // serial.print(F("Up: "));
-        // serial.print(LMIC.seqnoUp);
-        // serial.print(F(",  Down: "));
-        // serial.println(LMIC.seqnoDn);
+        printSpaces(serial, MESSAGE_INDENT);
+        serial.print(F("Up: "));
+        serial.print(LMIC.seqnoUp);
+        serial.print(F(",  Down: "));
+        serial.println(LMIC.seqnoDn);
     }
 #endif
 }
@@ -326,19 +326,17 @@ void printHeader(void)
 {
 #ifdef USE_DISPLAY
     display.clear();
-    display.setCursor(COL_0, HEADER_ROW);
-    display.print(F("LMIC-node"));
+    display.setCursor(COL_4, HEADER_ROW);
+    display.print(F("SmartRF"));
 #ifdef ABP_ACTIVATION
     display.drawString(ABPMODE_COL, HEADER_ROW, "ABP");
 #endif
 #ifdef CLASSIC_LMIC
     display.drawString(CLMICSYMBOL_COL, HEADER_ROW, "*");
 #endif
-    display.drawString(COL_0, DEVICEID_ROW, deviceId);
-    display.setCursor(COL_0, INTERVAL_ROW);
-    display.print(F("Interval:"));
-    display.print(doWorkIntervalSeconds);
-    display.print("s");
+    display.drawString(COL_0, FREQ_INI, "Freqz_ini:");
+    display.setCursor(COL_0, FREQ_FIN);
+    display.print(F("Freqz_fin:"));
 #endif
 
 #ifdef USE_SERIAL
@@ -578,7 +576,7 @@ void onEvent(ev_t ev)
             {
                 fPort = LMIC.frame[LMIC.dataBeg - 1];
             }
-            // printDownlinkInfo();
+            printDownlinkInfo();
             processDownlink(timestamp, fPort, LMIC.frame + LMIC.dataBeg, LMIC.dataLen);
         }
         break;
@@ -617,8 +615,8 @@ static void doWorkCallback(osjob_t *job)
 
     ostime_t timestamp = os_getTime();
 #ifdef USE_SERIAL
-    // serial.println();
-    // printEvent(timestamp, "doWork job started", PrintTarget::Serial);
+    serial.println();
+    printEvent(timestamp, "doWork job started", PrintTarget::Serial);
 #endif
 
     // Do the work that needs to be performed.
@@ -636,7 +634,7 @@ lmic_tx_error_t scheduleUplink(uint8_t fPort, uint8_t *data, uint8_t dataLength,
     // Transmission will be performed at the next possible time
 
     ostime_t timestamp = os_getTime();
-    // printEvent(timestamp, "Packet queued");
+    printEvent(timestamp, "Packet queued");
 
     lmic_tx_error_t retval = LMIC_setTxData2(fPort, data, dataLength, confirmed ? 1 : 0);
     timestamp = os_getTime();
@@ -714,19 +712,19 @@ void processWork(ostime_t doWorkJobTimeStamp)
         // Interval and Counter values are combined on a single row.
         // This allows to keep the 3rd row empty which makes the
         // information better readable on the small display.
-        display.clearLine(INTERVAL_ROW);
-        display.setCursor(COL_0, INTERVAL_ROW);
-        display.print("I:");
-        display.print(doWorkIntervalSeconds);
-        display.print("s");
-        display.print(" Ctr:");
-        display.print(counterValue);
+        // display.clearLine(INTERVAL_ROW);
+        // display.setCursor(COL_0, INTERVAL_ROW);
+        // display.print("I:");
+        // display.print(doWorkIntervalSeconds);
+        // display.print("s");
+        // display.print(" Ctr:");
+        // display.print(counterValue);
 #endif
 #ifdef USE_SERIAL
-        // printEvent(timestamp, "Input data collected", PrintTarget::Serial);
-        // printSpaces(serial, MESSAGE_INDENT);
-        // serial.print(F("COUNTER value: "));
-        // serial.println(counterValue);
+        printEvent(timestamp, "Input data collected", PrintTarget::Serial);
+        printSpaces(serial, MESSAGE_INDENT);
+        serial.print(F("COUNTER value: "));
+        serial.println(counterValue);
 #endif
 
         // For simplicity LMIC-node will try to send an uplink
@@ -754,19 +752,32 @@ void processWork(ostime_t doWorkJobTimeStamp)
             scheduleUplink(fPort, payloadBuffer, payloadLength);
         }
     }
+    else
+        serial.println("The join has not been completed :(");
 }
 
 void processDownlink(ostime_t txCompleteTimestamp, uint8_t fPort, uint8_t *data, uint8_t dataLength)
 {
-    Serial.print(F("Downlink data on port "));
-    Serial.print(fPort);
-    Serial.print(F(": "));
-    for (int i = 0; i < dataLength; ++i)
+    // This function is called from the onEvent() event handler
+    // on EV_TXCOMPLETE when a downlink message was received.
+
+    // Implements a 'reset counter' command that can be sent via a downlink message.
+    // To send the reset counter command to the node, send a downlink message
+    // (e.g. from the TTN Console) with single byte value resetCmd on port cmdPort.
+
+    const uint8_t cmdPort = 100;
+    const uint8_t resetCmd = 0xC0;
+
+    if (fPort == cmdPort && dataLength == 1 && data[0] == resetCmd)
     {
-        Serial.print(data[i], HEX);
-        Serial.print(" ");
+#ifdef USE_SERIAL
+        printSpaces(serial, MESSAGE_INDENT);
+        serial.println(F("Reset cmd received"));
+#endif
+        ostime_t timestamp = os_getTime();
+        resetCounter();
+        printEvent(timestamp, "Counter reset", PrintTarget::All, false);
     }
-    Serial.println(); // New line after printing the data
 }
 
 //  █ █ █▀▀ █▀▀ █▀▄   █▀▀ █▀█ █▀▄ █▀▀   █▀▀ █▀█ █▀▄
