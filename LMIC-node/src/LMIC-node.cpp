@@ -168,26 +168,26 @@ void printEvent(ostime_t timestamp,
     }
 #endif
 
-#ifdef USE_SERIAL
-    // Create padded/indented output without using printf().
-    // printf() is not default supported/enabled in each Arduino core.
-    // Not using printf() will save memory for memory constrainted devices.
-    String timeString(timestamp);
-    uint8_t len = timeString.length();
-    uint8_t zerosCount = TIMESTAMP_WIDTH > len ? TIMESTAMP_WIDTH - len : 0;
+    // #ifdef USE_SERIAL
+    //     // Create padded/indented output without using printf().
+    //     // printf() is not default supported/enabled in each Arduino core.
+    //     // Not using printf() will save memory for memory constrainted devices.
+    //     String timeString(timestamp);
+    //     uint8_t len = timeString.length();
+    //     uint8_t zerosCount = TIMESTAMP_WIDTH > len ? TIMESTAMP_WIDTH - len : 0;
 
-    if (target == PrintTarget::All || target == PrintTarget::Serial)
-    {
-        printChars(serial, '0', zerosCount);
-        serial.print(timeString);
-        serial.print(":  ");
-        if (eventLabel)
-        {
-            serial.print(F("Event: "));
-        }
-        serial.println(message);
-    }
-#endif
+    //     if (target == PrintTarget::All || target == PrintTarget::Serial)
+    //     {
+    //         printChars(serial, '0', zerosCount);
+    //         serial.print(timeString);
+    //         serial.print(":  ");
+    //         if (eventLabel)
+    //         {
+    //             serial.print(F("Event: "));
+    //         }
+    //         serial.println(message);
+    //     }
+    // #endif
 }
 
 void printEvent(ostime_t timestamp,
@@ -214,16 +214,16 @@ void printFrameCounters(PrintTarget target = PrintTarget::All)
     }
 #endif
 
-#ifdef USE_SERIAL
-    if (target == PrintTarget::Serial || target == PrintTarget::All)
-    {
-        printSpaces(serial, MESSAGE_INDENT);
-        serial.print(F("Up: "));
-        serial.print(LMIC.seqnoUp);
-        serial.print(F(",  Down: "));
-        serial.println(LMIC.seqnoDn);
-    }
-#endif
+    // #ifdef USE_SERIAL
+    //     if (target == PrintTarget::Serial || target == PrintTarget::All)
+    //     {
+    //         printSpaces(serial, MESSAGE_INDENT);
+    //         serial.print(F("Up: "));
+    //         serial.print(LMIC.seqnoUp);
+    //         serial.print(F(",  Down: "));
+    //         serial.println(LMIC.seqnoDn);
+    //     }
+    // #endif
 }
 
 void printSessionKeys()
@@ -292,33 +292,33 @@ void printDownlinkInfo(void)
     display.print(snrDecimalFraction);
 #endif
 
-#ifdef USE_SERIAL
-    printSpaces(serial, MESSAGE_INDENT);
-    serial.println(F("Downlink received"));
+// #ifdef USE_SERIAL
+//     printSpaces(serial, MESSAGE_INDENT);
+//     serial.println(F("Downlink received"));
 
-    printSpaces(serial, MESSAGE_INDENT);
-    serial.print(F("RSSI: "));
-    serial.print(rssi);
-    serial.print(F(" dBm,  SNR: "));
-    serial.print(snr);
-    serial.print(".");
-    serial.print(snrDecimalFraction);
-    serial.println(F(" dB"));
+//     printSpaces(serial, MESSAGE_INDENT);
+//     serial.print(F("RSSI: "));
+//     serial.print(rssi);
+//     serial.print(F(" dBm,  SNR: "));
+//     serial.print(snr);
+//     serial.print(".");
+//     serial.print(snrDecimalFraction);
+//     serial.println(F(" dB"));
 
-    printSpaces(serial, MESSAGE_INDENT);
-    serial.print(F("Port: "));
-    serial.println(fPort);
+//     printSpaces(serial, MESSAGE_INDENT);
+//     serial.print(F("Port: "));
+//     serial.println(fPort);
 
-    if (dataLength != 0)
-    {
-        printSpaces(serial, MESSAGE_INDENT);
-        serial.print(F("Length: "));
-        serial.println(LMIC.dataLen);
-        printSpaces(serial, MESSAGE_INDENT);
-        serial.print(F("Data: "));
-        printHex(serial, LMIC.frame + LMIC.dataBeg, LMIC.dataLen, true, ' ');
-    }
-#endif
+//     if (dataLength != 0)
+//     {
+//         printSpaces(serial, MESSAGE_INDENT);
+//         serial.print(F("Length: "));
+//         serial.println(LMIC.dataLen);
+//         printSpaces(serial, MESSAGE_INDENT);
+//         serial.print(F("Data: "));
+//         printHex(serial, LMIC.frame + LMIC.dataBeg, LMIC.dataLen, true, ' ');
+//     }
+// #endif
 #endif
 }
 
@@ -339,34 +339,34 @@ void printHeader(void)
     display.print(F("Freqz_fin:"));
 #endif
 
-#ifdef USE_SERIAL
-    serial.println(F("\n\nLMIC-node\n"));
-    serial.print(F("Device-id:     "));
-    serial.println(deviceId);
-    serial.print(F("LMIC library:  "));
-#ifdef MCCI_LMIC
-    serial.println(F("MCCI"));
-#else
-    serial.println(F("Classic [Deprecated]"));
-#endif
-    serial.print(F("Activation:    "));
-#ifdef OTAA_ACTIVATION
-    serial.println(F("OTAA"));
-#else
-    serial.println(F("ABP"));
-#endif
-#if defined(LMIC_DEBUG_LEVEL) && LMIC_DEBUG_LEVEL > 0
-    serial.print(F("LMIC debug:    "));
-    serial.println(LMIC_DEBUG_LEVEL);
-#endif
-    serial.print(F("Interval:      "));
-    serial.print(doWorkIntervalSeconds);
-    serial.println(F(" seconds"));
-    if (activationMode == ActivationMode::OTAA)
-    {
-        serial.println();
-    }
-#endif
+    // #ifdef USE_SERIAL
+    //     serial.println(F("\n\nLMIC-node\n"));
+    //     serial.print(F("Device-id:     "));
+    //     serial.println(deviceId);
+    //     serial.print(F("LMIC library:  "));
+    // #ifdef MCCI_LMIC
+    //     serial.println(F("MCCI"));
+    // #else
+    //     serial.println(F("Classic [Deprecated]"));
+    // #endif
+    //     serial.print(F("Activation:    "));
+    // #ifdef OTAA_ACTIVATION
+    //     serial.println(F("OTAA"));
+    // #else
+    //     serial.println(F("ABP"));
+    // #endif
+    // #if defined(LMIC_DEBUG_LEVEL) && LMIC_DEBUG_LEVEL > 0
+    //     serial.print(F("LMIC debug:    "));
+    //     serial.println(LMIC_DEBUG_LEVEL);
+    // #endif
+    //     serial.print(F("Interval:      "));
+    //     serial.print(doWorkIntervalSeconds);
+    //     serial.println(F(" seconds"));
+    //     if (activationMode == ActivationMode::OTAA)
+    //     {
+    //         serial.println();
+    //     }
+    // #endif
 }
 
 #ifdef ABP_ACTIVATION
@@ -614,10 +614,10 @@ static void doWorkCallback(osjob_t *job)
     // The actual work is performed in function processWork() which is called below.
 
     ostime_t timestamp = os_getTime();
-#ifdef USE_SERIAL
-    serial.println();
-    printEvent(timestamp, "doWork job started", PrintTarget::Serial);
-#endif
+    // #ifdef USE_SERIAL
+    //     serial.println();
+    //     printEvent(timestamp, "doWork job started", PrintTarget::Serial);
+    // #endif
 
     // Do the work that needs to be performed.
     processWork(timestamp);
@@ -720,12 +720,12 @@ void processWork(ostime_t doWorkJobTimeStamp)
         // display.print(" Ctr:");
         // display.print(counterValue);
 #endif
-#ifdef USE_SERIAL
-        printEvent(timestamp, "Input data collected", PrintTarget::Serial);
-        printSpaces(serial, MESSAGE_INDENT);
-        serial.print(F("COUNTER value: "));
-        serial.println(counterValue);
-#endif
+        // #ifdef USE_SERIAL
+        //         printEvent(timestamp, "Input data collected", PrintTarget::Serial);
+        //         printSpaces(serial, MESSAGE_INDENT);
+        //         serial.print(F("COUNTER value: "));
+        //         serial.println(counterValue);
+        // #endif
 
         // For simplicity LMIC-node will try to send an uplink
         // message every time processWork() is executed.
@@ -734,9 +734,9 @@ void processWork(ostime_t doWorkJobTimeStamp)
         if (LMIC.opmode & OP_TXRXPEND)
         {
 // TxRx is currently pending, do not send.
-#ifdef USE_SERIAL
-            printEvent(timestamp, "Uplink not scheduled because TxRx pending", PrintTarget::Serial);
-#endif
+// #ifdef USE_SERIAL
+//             printEvent(timestamp, "Uplink not scheduled because TxRx pending", PrintTarget::Serial);
+// #endif
 #ifdef USE_DISPLAY
             printEvent(timestamp, "UL not scheduled", PrintTarget::Display);
 #endif
@@ -768,10 +768,10 @@ void processDownlink(ostime_t txCompleteTimestamp, uint8_t fPort, uint8_t *data,
 
     if (fPort == cmdPort && dataLength == 1 && data[0] == resetCmd)
     {
-#ifdef USE_SERIAL
-        printSpaces(serial, MESSAGE_INDENT);
-        serial.println(F("Reset cmd received"));
-#endif
+        // #ifdef USE_SERIAL
+        //         printSpaces(serial, MESSAGE_INDENT);
+        //         serial.println(F("Reset cmd received"));
+        // #endif
         ostime_t timestamp = os_getTime();
         resetCounter();
         printEvent(timestamp, "Counter reset", PrintTarget::All, false);
@@ -843,19 +843,24 @@ void processSerialData()
     if (serial.available())
     {
         char inChar = (char)serial.read(); // Read the incoming byte
-        inputString += inChar;             // Add it to the inputString
-        // If the incoming character is a newline, process the inputString
-        if (inChar == '\n')
+        // If the incoming character is a newline, print the inputString
+        if (inChar == '\n' || inChar == '\r')
         {
-            inputString.trim(); // Remove any whitespace
-            // Convert the inputString to an integer
-            int inputValue = inputString.toInt();
-            serial.print("Value received: ");
-            serial.println(inputValue);
-
-            // Process the inputValue as needed here
-
+            // Optionally ignore a preceding carriage return before the newline
+            if (inputString.endsWith("\r"))
+            {
+                inputString.remove(inputString.length() - 1);
+            }
+            serial.print("Received: ");
+            serial.println(inputString);
+            display.clearLine(STATUS_ROW);
+            display.setCursor(COL_0, STATUS_ROW);
+            display.print(inputString);
             inputString = ""; // Clear the string for the next message
+        }
+        else
+        {
+            inputString += inChar; // Add it to the inputString
         }
     }
 }
