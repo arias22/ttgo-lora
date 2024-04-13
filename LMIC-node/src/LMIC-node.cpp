@@ -51,7 +51,7 @@
  ******************************************************************************/
 
 #include "LMIC-node.h"
-
+#include <ArduinoJson.h>
 //  █ █ █▀▀ █▀▀ █▀▄   █▀▀ █▀█ █▀▄ █▀▀   █▀▄ █▀▀ █▀▀ ▀█▀ █▀█
 //  █ █ ▀▀█ █▀▀ █▀▄   █   █ █ █ █ █▀▀   █▀▄ █▀▀ █ █  █  █ █
 //  ▀▀▀ ▀▀▀ ▀▀▀ ▀ ▀   ▀▀▀ ▀▀▀ ▀▀  ▀▀▀   ▀▀  ▀▀▀ ▀▀▀ ▀▀▀ ▀ ▀
@@ -744,12 +744,24 @@ void processWork(ostime_t doWorkJobTimeStamp)
         else
         {
             // Prepare uplink payload.
-            uint8_t fPort = 10;
-            payloadBuffer[0] = counterValue >> 8;
-            payloadBuffer[1] = counterValue & 0xFF;
-            uint8_t payloadLength = 2;
+            // uint8_t fPort = 10;
+            // payloadBuffer[0] = counterValue >> 8;
+            // payloadBuffer[1] = counterValue & 0xFF;
+            // uint8_t payloadLength = 2;
 
-            scheduleUplink(fPort, payloadBuffer, payloadLength);
+            // scheduleUplink(fPort, payloadBuffer, payloadLength);
+            uint8_t fPort = 10;
+            StaticJsonDocument<512> doc;   // Adjust the size according to your data needs
+            doc["idm"] = "measurement_id"; // Shortened key name
+            doc["idd"] = "station_id";
+            doc["dt"] = "now";           // Ensure 'now' is in a compact format
+            doc["res"] = "results_list"; // Ensure this is efficiently formatted
+            doc["thr"] = "threshold";    // Shortened key name
+
+            char jsonBuffer[512]; // Ensure this buffer is large enough for your JSON string
+            serializeJson(doc, jsonBuffer);
+            // serial.println(jsonBuffer);
+            scheduleUplink(fPort, (uint8_t *)jsonBuffer, strlen(jsonBuffer));
         }
     }
 }
