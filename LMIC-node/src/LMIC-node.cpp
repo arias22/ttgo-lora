@@ -57,6 +57,7 @@
 //  ▀▀▀ ▀▀▀ ▀▀▀ ▀ ▀   ▀▀▀ ▀▀▀ ▀▀  ▀▀▀   ▀▀  ▀▀▀ ▀▀▀ ▀▀▀ ▀ ▀
 
 const uint8_t payloadBufferLength = 4; // Adjust to fit max payload length
+JsonDocument doc;                      // Adjust the size according to your data needs
 
 //  █ █ █▀▀ █▀▀ █▀▄   █▀▀ █▀█ █▀▄ █▀▀   █▀▀ █▀█ █▀▄
 //  █ █ ▀▀█ █▀▀ █▀▄   █   █ █ █ █ █▀▀   █▀▀ █ █ █ █
@@ -620,8 +621,8 @@ static void doWorkCallback(osjob_t *job)
     // #endif
 
     // Do the work that needs to be performed.
-    processWork(timestamp);
-
+    processWork(timestamp, 1);
+    serial.println("doing work with cdr");
     // This job must explicitly reschedule itself for the next run.
     ostime_t startAt = timestamp + sec2osticks((int64_t)doWorkIntervalSeconds);
     os_setTimedCallback(&doWorkJob, startAt, doWorkCallback);
@@ -686,7 +687,7 @@ void resetCounter()
     counter_ = 0;
 }
 
-void processWork(ostime_t doWorkJobTimeStamp)
+void processWork(ostime_t doWorkJobTimeStamp, int keepAlive)
 {
     // This function is called from the doWorkCallback()
     // callback function when the doWork job is executed.
@@ -743,25 +744,25 @@ void processWork(ostime_t doWorkJobTimeStamp)
         }
         else
         {
-            // Prepare uplink payload.
-            // uint8_t fPort = 10;
-            // payloadBuffer[0] = counterValue >> 8;
-            // payloadBuffer[1] = counterValue & 0xFF;
-            // uint8_t payloadLength = 2;
+            serial.println(keepAlive);
 
-            // scheduleUplink(fPort, payloadBuffer, payloadLength);
-            uint8_t fPort = 10;
-            StaticJsonDocument<512> doc;   // Adjust the size according to your data needs
-            doc["idm"] = "measurement_id"; // Shortened key name
-            doc["idd"] = "station_id";
-            doc["dt"] = "now";           // Ensure 'now' is in a compact format
-            doc["res"] = "results_list"; // Ensure this is efficiently formatted
-            doc["thr"] = "threshold";    // Shortened key name
-
-            char jsonBuffer[512]; // Ensure this buffer is large enough for your JSON string
-            serializeJson(doc, jsonBuffer);
-            // serial.println(jsonBuffer);
-            scheduleUplink(fPort, (uint8_t *)jsonBuffer, strlen(jsonBuffer));
+            if (keepAlive == 1)
+            {
+                // Prepare uplink payload.
+                uint8_t fPort = 10;
+                payloadBuffer[0] = counterValue >> 8;
+                payloadBuffer[1] = counterValue & 0xFF;
+                uint8_t payloadLength = 2;
+                scheduleUplink(fPort, payloadBuffer, payloadLength);
+            }
+            else
+            {
+                uint8_t fPort = 10;
+                char jsonBuffer[512]; // Ensure this buffer is large enough for your JSON string
+                serializeJson(doc, jsonBuffer);
+                serial.println(jsonBuffer);
+                scheduleUplink(fPort, (uint8_t *)jsonBuffer, strlen(jsonBuffer));
+            }
         }
     }
 }
@@ -855,7 +856,7 @@ void processSerialData()
     if (serial.available())
     {
         char inChar = (char)serial.read(); // Read the incoming byte
-        // If the incoming character is a newline, print the inputString
+        // If the incoming character is a newline, handle the complete string
         if (inChar == '\n' || inChar == '\r')
         {
             // Optionally ignore a preceding carriage return before the newline
@@ -863,11 +864,34 @@ void processSerialData()
             {
                 inputString.remove(inputString.length() - 1);
             }
+
+            // Print the received data to the serial (for debugging)
             serial.print("Received: ");
             serial.println(inputString);
+
+            // Clear the status row on the display and show the received string
             display.clearLine(STATUS_ROW);
             display.setCursor(COL_0, STATUS_ROW);
-            display.print(inputString);
+            display.print("Holaaaa");
+
+            // Attempt to parse the JSON string
+
+            DeserializationError error = deserializeJson(doc, inputString);
+            if (error)
+            {
+                serial.print("JSON parse failed: ");
+                serial.println(error.c_str());
+            }
+            else
+            {
+                // Successfully parsed JSON data
+                // Example of how to use the data:
+                // serial.print("Measurement ID: ");
+                // serial.println(doc["id_measurement"].as<String>());
+                ostime_t timestamp = os_getTime();
+                processWork(timestamp, 0);
+            }
+
             inputString = ""; // Clear the string for the next message
         }
         else

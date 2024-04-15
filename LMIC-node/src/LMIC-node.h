@@ -57,7 +57,7 @@ const s1_t DefaultABPTxPower = 14;
 
 // Forward declarations
 static void doWorkCallback(osjob_t *job);
-void processWork(ostime_t timestamp);
+void processWork(ostime_t timestamp, int keepAlive);
 void processDownlink(ostime_t eventTimestamp, uint8_t fPort, uint8_t *data, uint8_t dataLength);
 void onLmicEvent(void *pUserData, ev_t ev);
 void displayTxSymbol(bool visible);
