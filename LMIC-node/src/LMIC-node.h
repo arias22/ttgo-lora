@@ -268,7 +268,7 @@ uint8_t transmitSymbol[8] = {0x18, 0x18, 0x00, 0x24, 0x99, 0x42, 0x3c, 0x00};
 #define FREQ_INI ROW_1
 #define FREQ_FIN ROW_2
 #define DATA_ROW ROW_4
-#define EVENT_ROW ROW_5
+#define EVENT_ROW ROW_6
 #define STATUS_ROW ROW_6
 #define FRMCNTRS_ROW ROW_7
 #define COL_0 0

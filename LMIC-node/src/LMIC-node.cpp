@@ -155,10 +155,10 @@ void printEvent(ostime_t timestamp,
 #ifdef USE_DISPLAY
     if (target == PrintTarget::All || target == PrintTarget::Display)
     {
-        display.clearLine(DATA_ROW);
-        display.setCursor(COL_0, DATA_ROW);
-        display.print(F("Data:"));
-        display.print(timestamp);
+        // display.clearLine(DATA_ROW);
+        // display.setCursor(COL_0, DATA_ROW);
+        // display.print(F("Data:"));
+        // display.print(timestamp);
         display.clearLine(EVENT_ROW);
         if (clearDisplayStatusRow)
         {
@@ -274,23 +274,23 @@ void printDownlinkInfo(void)
     }
 
 #ifdef USE_DISPLAY
-    display.clearLine(EVENT_ROW);
-    display.setCursor(COL_0, EVENT_ROW);
-    display.print(F("RX P:"));
-    display.print(fPort);
-    if (dataLength != 0)
-    {
-        display.print(" Len:");
-        display.print(LMIC.dataLen);
-    }
-    display.clearLine(STATUS_ROW);
-    display.setCursor(COL_0, STATUS_ROW);
-    display.print(F("RSSI"));
-    display.print(rssi);
-    display.print(F(" SNR"));
-    display.print(snr);
-    display.print(".");
-    display.print(snrDecimalFraction);
+    // display.clearLine(EVENT_ROW);
+    // display.setCursor(COL_0, EVENT_ROW);
+    // display.print(F("RX P:"));
+    // display.print(fPort);
+    // if (dataLength != 0)
+    // {
+    //     display.print(" Len:");
+    //     display.print(LMIC.dataLen);
+    // }
+    // display.clearLine(STATUS_ROW);
+    // display.setCursor(COL_0, STATUS_ROW);
+    // display.print(F("RSSI"));
+    // display.print(rssi);
+    // display.print(F(" SNR"));
+    // display.print(snr);
+    // display.print(".");
+    // display.print(snrDecimalFraction);
 #endif
 
 // #ifdef USE_SERIAL
@@ -335,9 +335,9 @@ void printHeader(void)
 #ifdef CLASSIC_LMIC
     display.drawString(CLMICSYMBOL_COL, HEADER_ROW, "*");
 #endif
-    display.drawString(COL_0, FREQ_INI, "Freqz_ini:");
+    display.drawString(COL_0, FREQ_INI, "FqzIn:");
     display.setCursor(COL_0, FREQ_FIN);
-    display.print(F("Freqz_fin:"));
+    display.print(F("FqzFin:"));
 #endif
 
     // #ifdef USE_SERIAL
@@ -577,6 +577,7 @@ void onEvent(ev_t ev)
             {
                 fPort = LMIC.frame[LMIC.dataBeg - 1];
             }
+            serial.println("Data received");
             printDownlinkInfo();
             processDownlink(timestamp, fPort, LMIC.frame + LMIC.dataBeg, LMIC.dataLen);
         }
@@ -622,7 +623,7 @@ static void doWorkCallback(osjob_t *job)
 
     // Do the work that needs to be performed.
     processWork(timestamp, 1);
-    serial.println("doing work with cdr");
+
     // This job must explicitly reschedule itself for the next run.
     ostime_t startAt = timestamp + sec2osticks((int64_t)doWorkIntervalSeconds);
     os_setTimedCallback(&doWorkJob, startAt, doWorkCallback);
@@ -744,7 +745,7 @@ void processWork(ostime_t doWorkJobTimeStamp, int keepAlive)
         }
         else
         {
-            serial.println(keepAlive);
+            // serial.println(keepAlive);
 
             if (keepAlive == 1)
             {
@@ -753,6 +754,7 @@ void processWork(ostime_t doWorkJobTimeStamp, int keepAlive)
                 payloadBuffer[0] = counterValue >> 8;
                 payloadBuffer[1] = counterValue & 0xFF;
                 uint8_t payloadLength = 2;
+                // serial.println("Sending the counter");
                 scheduleUplink(fPort, payloadBuffer, payloadLength);
             }
             else
@@ -760,7 +762,8 @@ void processWork(ostime_t doWorkJobTimeStamp, int keepAlive)
                 uint8_t fPort = 10;
                 char jsonBuffer[512]; // Ensure this buffer is large enough for your JSON string
                 serializeJson(doc, jsonBuffer);
-                serial.println(jsonBuffer);
+                // serial.println("Sending the data");
+
                 scheduleUplink(fPort, (uint8_t *)jsonBuffer, strlen(jsonBuffer));
             }
         }
@@ -776,18 +779,30 @@ void processDownlink(ostime_t txCompleteTimestamp, uint8_t fPort, uint8_t *data,
     // To send the reset counter command to the node, send a downlink message
     // (e.g. from the TTN Console) with single byte value resetCmd on port cmdPort.
 
-    const uint8_t cmdPort = 100;
-    const uint8_t resetCmd = 0xC0;
-
-    if (fPort == cmdPort && dataLength == 1 && data[0] == resetCmd)
+    // Assuming all other ports are used for JSON data.
+    StaticJsonDocument<512> datos; // Adjust size according to expected JSON complexity.
+    DeserializationError error = deserializeJson(datos, data, dataLength);
+    if (error)
     {
-        // #ifdef USE_SERIAL
-        //         printSpaces(serial, MESSAGE_INDENT);
-        //         serial.println(F("Reset cmd received"));
-        // #endif
-        ostime_t timestamp = os_getTime();
-        resetCounter();
-        printEvent(timestamp, "Counter reset", PrintTarget::All, false);
+        serial.print("deserializeJson() failed: ");
+        serial.println(error.c_str());
+    }
+    else
+    {
+        // Output the JSON object to Serial
+        serializeJsonPretty(datos, Serial);
+
+        // Assuming 'display' is properly initialized and configured.
+        int fi = datos["data"]["fi"]; // Extract the 'fi' value from JSON
+        int ff = datos["data"]["ff"]; // Extract the 'ff' value from JSON
+
+        // Display "Freqz_ini:" followed by the value of 'fi'
+        display.setCursor(COL_0, FREQ_INI);
+        display.print("FqzIn:" + String(fi));
+
+        // Move the cursor and display "Freqz_fin:" followed by the value of 'ff'
+        display.setCursor(COL_0, FREQ_FIN);
+        display.print("FqzFin:" + String(ff));
     }
 }
 
@@ -870,9 +885,6 @@ void processSerialData()
             serial.println(inputString);
 
             // Clear the status row on the display and show the received string
-            display.clearLine(STATUS_ROW);
-            display.setCursor(COL_0, STATUS_ROW);
-            display.print("Holaaaa");
 
             // Attempt to parse the JSON string
 
@@ -888,6 +900,8 @@ void processSerialData()
                 // Example of how to use the data:
                 // serial.print("Measurement ID: ");
                 // serial.println(doc["id_measurement"].as<String>());
+                display.setCursor(COL_0, DATA_ROW);
+                display.print(doc["results"].as<String>());
                 ostime_t timestamp = os_getTime();
                 processWork(timestamp, 0);
             }
