@@ -237,21 +237,21 @@ void printSessionKeys()
     LMIC_getSessionKeys(&networkId, &deviceAddress,
                         networkSessionKey, applicationSessionKey);
 
-    printSpaces(serial, MESSAGE_INDENT);
-    serial.print(F("Network Id: "));
-    serial.println(networkId, DEC);
+    // printSpaces(serial, MESSAGE_INDENT);
+    // serial.print(F("Network Id: "));
+    // serial.println(networkId, DEC);
 
-    printSpaces(serial, MESSAGE_INDENT);
-    serial.print(F("Device Address: "));
-    serial.println(deviceAddress, HEX);
+    // printSpaces(serial, MESSAGE_INDENT);
+    // serial.print(F("Device Address: "));
+    // serial.println(deviceAddress, HEX);
 
-    printSpaces(serial, MESSAGE_INDENT);
-    serial.print(F("Application Session Key: "));
-    printHex(serial, applicationSessionKey, 16, true, '-');
+    // printSpaces(serial, MESSAGE_INDENT);
+    // serial.print(F("Application Session Key: "));
+    // printHex(serial, applicationSessionKey, 16, true, '-');
 
-    printSpaces(serial, MESSAGE_INDENT);
-    serial.print(F("Network Session Key:     "));
-    printHex(serial, networkSessionKey, 16, true, '-');
+    // printSpaces(serial, MESSAGE_INDENT);
+    // serial.print(F("Network Session Key:     "));
+    // printHex(serial, networkSessionKey, 16, true, '-');
 #endif
 }
 
@@ -577,7 +577,7 @@ void onEvent(ev_t ev)
             {
                 fPort = LMIC.frame[LMIC.dataBeg - 1];
             }
-            serial.println("Data received");
+            // serial.println("Data received");
             printDownlinkInfo();
             processDownlink(timestamp, fPort, LMIC.frame + LMIC.dataBeg, LMIC.dataLen);
         }
@@ -881,8 +881,8 @@ void processSerialData()
             }
 
             // Print the received data to the serial (for debugging)
-            serial.print("Received: ");
-            serial.println(inputString);
+            // serial.print("Received: ");
+            // serial.println(inputString);
 
             // Clear the status row on the display and show the received string
 
